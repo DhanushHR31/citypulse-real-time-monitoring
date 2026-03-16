@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..database import get_db
-from ..services import collector, preprocessor, navigation
-from .. import models
+from database import get_db
+from services import collector, preprocessor, navigation
+import models
 from datetime import datetime
 import random
 

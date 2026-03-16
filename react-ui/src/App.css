@@ -9,20 +9,32 @@
 }
 
 :root {
-  --bg: #0d1117;
-  --surface: #161b27;
-  --surface2: #1c2333;
-  --border: rgba(99, 102, 241, .2);
-  --primary: #6366f1;
-  --primaryh: #818cf8;
-  --accent: #06b6d4;
+  --bg: #0f172a;
+  /* Deep Navy background for main area */
+  --surface: #1e293b;
+  /* Dark card surfaces */
+  --surface2: #1e293b;
+  /* Dark card surfaces */
+  --border: rgba(255, 255, 255, 0.1);
+  --primary: #3b82f6;
+  /* Vibrant blue */
+  --primaryh: #2563eb;
+  /* Darker hover blue */
+  --accent: #38bdf8;
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --muted: #8b9ab5;
-  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --text: #f8fafc;
   --radius: 12px;
-  --tr: .2s ease
+  --tr: .25s ease;
+
+  /* Sidebar specific variables (Light Mode) */
+  --sidebar-bg: #f8fafc;
+  --sidebar-text: #1e293b;
+  --sidebar-muted: #64748b;
+  --sidebar-border: #e2e8f0;
+  --sidebar-active-bg: linear-gradient(to right, #eff6ff, #e0e7ff);
 }
 
 html,
@@ -58,15 +70,20 @@ body,
 /* ── Shell ── */
 .cp-app {
   display: grid;
-  grid-template-columns: 228px 1fr;
+  grid-template-columns: 260px 1fr;
   height: 100vh;
-  overflow: hidden
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg);
 }
 
 .cp-main {
   display: flex;
   flex-direction: column;
-  overflow: hidden
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg);
+  /* Ensure main wrapper is dark */
 }
 
 .cp-body {
@@ -98,14 +115,15 @@ body,
   }
 }
 
-/* ── Sidebar ── */
+/* ── Sidebar (Light Mode) ── */
 .cp-sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding-bottom: 8px
+  padding-bottom: 8px;
+  color: var(--sidebar-text);
 }
 
 .cp-brand {
@@ -113,65 +131,68 @@ body,
   align-items: center;
   gap: 12px;
   padding: 18px 18px 16px;
-  border-bottom: 1px solid var(--border)
+  border-bottom: 1px solid var(--sidebar-border);
 }
 
 .cp-brand-icon {
-  font-size: 1.9rem
+  font-size: 1.9rem;
 }
 
 .cp-brand-name {
-  font-size: 1.05rem;
-  font-weight: 800
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--sidebar-text);
 }
 
 .cp-brand-sub {
-  font-size: .7rem;
-  color: var(--muted)
+  font-size: .75rem;
+  color: var(--sidebar-muted);
 }
 
 .cp-nav-label {
   font-size: .67rem;
   font-weight: 700;
-  color: var(--muted);
+  color: var(--sidebar-muted);
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  padding: 14px 18px 6px
+  padding: 16px 20px 8px;
 }
 
 .cp-nav-list {
   list-style: none;
-  padding: 0 8px
+  padding: 0 10px;
 }
 
 .cp-nav-list li {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
+  gap: 12px;
+  padding: 10px 14px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: .85rem;
-  color: var(--muted);
-  transition: all var(--tr)
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--sidebar-muted);
+  transition: all var(--tr);
 }
 
 .cp-nav-list li:hover {
-  background: rgba(99, 102, 241, .1);
-  color: var(--text)
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--sidebar-text);
 }
 
 .cp-nav-active {
-  background: rgba(99, 102, 241, .15) !important;
+  background: var(--sidebar-active-bg) !important;
   color: var(--primaryh) !important;
   font-weight: 600;
-  box-shadow: inset 2px 0 0 var(--primary)
+  border-left: 3px solid var(--primary);
+  border-radius: 4px 8px 8px 4px !important;
 }
 
 .cp-nav-icon {
-  font-size: .95rem;
-  width: 20px;
-  text-align: center
+  font-size: 1.05rem;
+  width: 22px;
+  text-align: center;
 }
 
 /* ── Hero ── */
@@ -202,11 +223,17 @@ body,
 
 /* ── Card ── */
 .cp-card {
-  background: var(--surface2);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
-  margin-bottom: 12px
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: transform var(--tr), border-color var(--tr);
+}
+
+.cp-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .p-hdr {
@@ -441,10 +468,10 @@ body,
 /* ── Nav layout ── */
 .nav-layout {
   display: grid;
-  grid-template-columns: 330px 1fr;
-  gap: 12px;
-  padding: 12px;
-  height: calc(100vh - 200px)
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+  padding: 16px;
+  height: 100%;
 }
 
 .nav-panel {

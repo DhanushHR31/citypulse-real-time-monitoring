@@ -2,7 +2,7 @@ import requests
 import os
 import random
 from datetime import datetime
-from . import gemini
+from services import gemini
 
 def analyze_with_gemini(text):
     return gemini.analyze_event_text(text)

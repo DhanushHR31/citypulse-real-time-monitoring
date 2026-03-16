@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ..services import navigation
+from services import navigation
 
 router = APIRouter(
     prefix="/navigation",

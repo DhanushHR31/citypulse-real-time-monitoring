@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ..services import notifications
+from services import notifications
 
 router = APIRouter(
     prefix="/notifications",
