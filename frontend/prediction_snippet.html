@@ -1,0 +1,16 @@
+<!-- Prediction Panel (added via write_to_file) -->
+<div class="prediction-panel" style="margin-top:20px; border-top:1px solid #e2e8f0; padding-top:10px;">
+    <h3>Event Prediction</h3>
+    <div class="input-group">
+        <select id="pred-event-type">
+            <option value="Traffic">Traffic</option>
+            <option value="Accident">Accident</option>
+            <option value="Weather">Weather</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <input type="datetime-local" id="pred-time">
+    </div>
+    <button id="predict-btn" class="secondary-btn">Predict Severity</button>
+    <div id="prediction-result" style="margin-top:10px; font-size:0.9rem;"></div>
+</div>
