@@ -88,6 +88,8 @@ class Event(Base):
     crowd_density = Column(String, default="Not Determined")
     impact_analysis = Column(Text, default="No significant route impact.")
     map_symbol = Column(String, nullable=True)
+    media_url = Column(String, nullable=True) # Path to uploaded image/video
+    ai_summary = Column(Text, nullable=True) # GEMINI AI summary
 
 class Route(Base):
     __tablename__ = "routes"
@@ -106,3 +108,12 @@ class Prediction(Base):
     predicted_severity = Column(String)
     predicted_time = Column(DateTime)
     confidence_score = Column(Float)
+
+class UserLog(Base):
+    __tablename__ = "user_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    username = Column(String)
+    action = Column(String) # e.g., "LOGIN"
+    log_info = Column(Text, nullable=True) # Device/IP info
+    timestamp = Column(DateTime, default=datetime.utcnow)

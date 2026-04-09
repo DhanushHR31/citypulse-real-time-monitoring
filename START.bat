@@ -1,65 +1,52 @@
 @echo off
-title CityPulse - Smart City Monitor
-color 0A
+title 🛡️ CityPulse - PRODUCTION MASTER RUNNER (v8.0)
+color 0B
+cls
 
 echo.
-echo  ============================================
-echo   CityPulse Smart City Monitor v3.0
-echo   Bengaluru Safety Intelligence Platform
-echo  ============================================
+echo  ==============================================================
+echo   🏙️  CITYPULSE : BENGALURU URBAN INTELLIGENCE PLATFORM
+echo   📍 PRODUCTION MODE - FIXED IP: 127.0.0.1
+echo  ==============================================================
 echo.
 
-REM ── Check Python ──────────────────────────────
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo  [ERROR] Python not found. Install from https://python.org
-    pause & exit /b 1
-)
+REM ── Step 1: Verify Dependencies ───────────────────────
+echo  [1/5] Verifying System Dependencies...
+cd /d "%~dp0backend"
+call ..\.venv\Scripts\activate
+pip install -r requirements.txt --quiet
+pip install firebase-admin --quiet
 
-REM ── Check Node ────────────────────────────────
-node --version >nul 2>&1
-if errorlevel 1 (
-    echo  [ERROR] Node.js not found. Install from https://nodejs.org
-    pause & exit /b 1
-)
+REM ── Step 2: Auto-Create Demo Accounts ────────────────
+echo  [2/5] Initializing SQLite Database & Demo Admin...
+python -c "from database import SessionLocal; import models; import hashlib; db=SessionLocal(); email='admin@citypulse.gov'; pw_hash=hashlib.sha256('admin123'.encode()).hexdigest(); user=db.query(models.User).filter(models.User.email==email).first(); [db.add(models.User(name='Internal Admin', email=email, password=pw_hash, role='admin', phone='9999999999')) if not user else None]; db.commit(); print('✔️ Database Ready.')"
 
-echo  [1/4] Installing Python dependencies...
-cd /d "%~dp0"
-pip install -r requirements.txt -q
-echo       Done.
+REM ── Step 3: Start Backend ────────────────────────────
+echo  [3/5] Starting Backend @ http://127.0.0.1:8000
+start "🛡️ Backend (API)" cmd /k "color 0B && echo BACKEND ACTIVE && python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000"
 
-echo  [2/4] Installing React dependencies...
+REM Wait for Backend to warm up
+timeout /t 5 /nobreak >nul
+
+REM ── Step 4: Start User Interface ──────────────────────
+echo  [4/5] Starting Citizen App @ http://127.0.0.1:5177
 cd /d "%~dp0react-ui"
-if not exist "node_modules" (
-    npm install --legacy-peer-deps -q
-)
-echo       Done.
+start "📍 Citizen UI" cmd /k "color 0D && echo USER UI ACTIVE && npm run dev -- --host 127.0.0.1 --port 5177"
 
-echo  [3/4] Starting FastAPI Backend on port 8000...
-cd /d "%~dp0"
-start "CityPulse Backend" cmd /k "color 0B && echo  Backend running at http://127.0.0.1:8000 && echo  API Docs at http://127.0.0.1:8000/docs && echo. && python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000"
-
-REM Wait 3 seconds for backend to start
-timeout /t 3 /nobreak >nul
-
-echo  [4/4] Starting React Frontend on port 5173...
-cd /d "%~dp0react-ui"
-start "CityPulse Frontend" cmd /k "color 0D && echo  Frontend running at http://localhost:5173 && echo. && npm run dev"
-
-REM Wait 4 seconds then open browser
-timeout /t 4 /nobreak >nul
+REM ── Step 5: Start Admin Dashboard ────────────────────
+echo  [5/5] Starting Admin Control @ http://127.0.0.1:5171
+cd /d "%~dp0admin-dashboard"
+start "🔓 Admin UI" cmd /k "color 0E && echo ADMIN UI ACTIVE && npm run dev -- --host 127.0.0.1 --port 5171"
 
 echo.
-echo  ============================================
-echo   Both servers are starting...
+echo  ==============================================================
+echo   ✅ PLATFORM SUCCESSFULY LAUNCHED
+echo  ==============================================================
+echo   Citizen Hub : http://127.0.0.1:5177
+echo   Admin Panel : http://127.0.0.1:5171
+echo   API Swagger : http://127.0.0.1:8000/docs
 echo.
-echo   Frontend :  http://localhost:5173
-echo   Backend  :  http://localhost:8000
-echo   API Docs :  http://localhost:8000/docs
-echo  ============================================
-echo.
-
-start http://localhost:5173
-echo  Browser opening...
-echo  Press any key to close this launcher.
-pause >nul
+echo   LOGIN: admin@citypulse.gov / admin123
+echo  ==============================================================
+timeout /t 5 >nul
+exit

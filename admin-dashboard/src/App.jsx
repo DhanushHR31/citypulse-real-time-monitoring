@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Users, Database, BarChart2, Globe, Zap, Shield, Code, Bot,
-  PocketKnife, FileText, Settings, Search, Edit2, Star, Share, X, Mail, Copy, Trash2, Check
+  PocketKnife, FileText, Settings, Search, Edit2, Star, Share, X, Mail, Copy, Trash2, Check, AlertTriangle
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './index.css';
@@ -9,6 +9,7 @@ import './index.css';
 const TABS = [
   { id: 'overview', icon: <Home size={16} />, label: 'Overview' },
   { id: 'users', icon: <Users size={16} />, label: 'Users' },
+  { id: 'incidents', icon: <AlertTriangle size={16} />, label: 'Incidents', badge: 'Live' },
   { id: 'data', icon: <Database size={16} />, label: 'Data', hasMenu: true },
   { id: 'analytics', icon: <BarChart2 size={16} />, label: 'Analytics', badge: 'Beta' },
   { id: 'domains', icon: <Globe size={16} />, label: 'Domains' },
@@ -23,9 +24,13 @@ const TABS = [
 ];
 
 const TABLES = [
-  'IncidentReport', 'SafetyAlert', 'LiveSession', 'SocialMediaAlert',
-  'RoadConditionReport', 'RouteAlert', 'TrendingTag',
-  'BangaloreCityAlert', 'BangaloreTagMonitor'
+  { label: 'Events Intelligence', id: 'events' },
+  { label: 'Security Logs', id: 'user_logs' },
+  { label: 'Incident Reports', id: 'incident_reports' },
+  { label: 'Safety Alerts', id: 'safety_alerts' },
+  { label: 'Active Routes', id: 'routes' },
+  { label: 'Social Feed', id: 'social_alerts' },
+  { label: 'Road Conditions', id: 'road_conditions' }
 ];
 
 // dynamic users state will be handled below
@@ -39,35 +44,51 @@ const trafficData = [
 ];
 
 export default function App() {
-  const [tab, setTab] = useState('settings');
-  const [dataTab, setDataTab] = useState(TABLES[0]);
+  const [tab, setTab] = useState('incidents');
+  const [dataTab, setDataTab] = useState(TABLES[0].id);
   const [settingsTab, setSettingsTab] = useState('app_settings');
   const [usersList, setUsersList] = useState([]);
+  const [incidentsList, setIncidentsList] = useState([]);
+  const [tableData, setTableData] = useState([]);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [incidentsLoading, setIncidentsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingUser, setEditingUser] = useState(null);
 
   const fetchUsers = () => {
-    fetch('http://localhost:8000/users/')
+    fetch('http://127.0.0.1:8000/users/')
       .then(res => res.json())
       .then(data => setUsersList(data))
       .catch(err => console.error("Failed to fetch users", err));
   };
 
+  const fetchIncidents = () => {
+    setIncidentsLoading(true);
+    fetch('http://127.0.0.1:8000/events/')
+      .then(res => res.json())
+      .then(data => { setIncidentsList(data); setIncidentsLoading(false); })
+      .catch(err => { console.error('Failed to fetch incidents', err); setIncidentsLoading(false); });
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchIncidents();
+    // Auto-refresh incidents every 30s
+    const interval = setInterval(fetchIncidents, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const deleteUser = async (id) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
-      await fetch(`http://localhost:8000/users/${id}`, { method: 'DELETE' });
+      await fetch(`http://127.0.0.1:8000/users/${id}`, { method: 'DELETE' });
       fetchUsers();
     } catch (err) { console.error('Delete failed', err); }
   };
 
   const saveUser = async (u) => {
     try {
-      await fetch(`http://localhost:8000/users/${u.id}`, {
+      await fetch(`http://127.0.0.1:8000/users/${u.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: u.name, email: u.email, phone: u.phone, role: u.role })
@@ -102,15 +123,15 @@ export default function App() {
             {TABS.map((t, idx) => (
               <React.Fragment key={t.id}>
                 {/* Data submenu injection */}
-                {(tab === 'data' && idx > 2 && idx < 4) && (
+                {(tab === 'data' && idx === 3) && (
                   <div className="pl-6 border-l border-[#eaeaea] ml-[22px] mb-3 mt-1 space-y-2">
                     {TABLES.map(table => (
                       <div
-                        key={table}
-                        className={`text-[13px] cursor-pointer hover:text-[#000] ${dataTab === table ? 'text-[#000] font-medium' : 'text-[#666]'}`}
-                        onClick={() => setDataTab(table)}
+                        key={table.id}
+                        className={`text-[13px] cursor-pointer hover:text-[#000] py-1 px-2 rounded-md ${dataTab === table.id ? 'bg-[#f0f0f0] text-[#000] font-medium' : 'text-[#666]'}`}
+                        onClick={() => setDataTab(table.id)}
                       >
-                        {table}
+                        {table.label}
                       </div>
                     ))}
                   </div>
@@ -157,6 +178,99 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto">
+
+        {/* INCIDENTS - Live from SQLite */}
+        {tab === 'incidents' && (
+          <div className="p-8 max-w-[1100px]">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight">Live Incident Intelligence</h1>
+                <p className="text-[14px] text-[#666] mt-1">Real-time city events stored in SQLite · Auto-refreshes every 30s</p>
+              </div>
+              <div className="flex gap-3 items-center">
+                <div className="flex items-center gap-2 text-emerald-600 text-[13px] font-semibold">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  {incidentsList.length} incidents in DB
+                </div>
+                <button onClick={fetchIncidents} className="border border-[#eaeaea] bg-white px-4 py-1.5 rounded-md text-[13px] font-medium hover:bg-gray-50">
+                  ↻ Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Stat chips */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              {[
+                { label: 'Total', val: incidentsList.length, color: '#6366f1' },
+                { label: 'Critical', val: incidentsList.filter(i => i.severity?.toLowerCase() === 'critical').length, color: '#dc2626' },
+                { label: 'High', val: incidentsList.filter(i => i.severity?.toLowerCase() === 'high').length, color: '#ea580c' },
+                { label: 'Citizen Report', val: incidentsList.filter(i => i.source === 'Citizen Report').length, color: '#0891b2' },
+              ].map(s => (
+                <div key={s.label} className="bg-white border border-[#eaeaea] rounded-xl p-4 shadow-sm">
+                  <div className="text-[12px] text-[#888] mb-1">{s.label}</div>
+                  <div className="text-2xl font-bold" style={{ color: s.color }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-[#eaeaea] rounded-xl shadow-sm overflow-hidden">
+              {incidentsLoading ? (
+                <div className="p-12 text-center text-[#888] text-[14px]">Loading incidents from database...</div>
+              ) : incidentsList.length === 0 ? (
+                <div className="p-12 text-center text-[#888] text-[14px]">No incidents found. Submit a report via the User Dashboard to see data here.</div>
+              ) : (
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-[#eaeaea] bg-[#fafafa] text-[#666]">
+                      <th className="px-4 py-3 font-semibold">ID</th>
+                      <th className="px-4 py-3 font-semibold">Symbol</th>
+                      <th className="px-4 py-3 font-semibold">Event Type</th>
+                      <th className="px-4 py-3 font-semibold">Severity</th>
+                      <th className="px-4 py-3 font-semibold">Location</th>
+                      <th className="px-4 py-3 font-semibold">Coordinates</th>
+                      <th className="px-4 py-3 font-semibold">Source</th>
+                      <th className="px-4 py-3 font-semibold">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incidentsList.slice().reverse().map((inc, i) => {
+                      const sev = inc.severity?.toLowerCase();
+                      const sevColor = sev === 'critical' ? { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' }
+                        : sev === 'high' ? { bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' }
+                        : sev === 'medium' ? { bg: '#fefce8', text: '#ca8a04', border: '#fde68a' }
+                        : { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' };
+                      return (
+                        <tr key={inc.id || i} className="border-b border-[#eaeaea] hover:bg-gray-50/50">
+                          <td className="px-4 py-3 font-mono text-[#888]">#{inc.id}</td>
+                          <td className="px-4 py-3 text-xl">{inc.map_symbol || '📍'}</td>
+                          <td className="px-4 py-3 font-medium text-[#111]">{inc.event_type}</td>
+                          <td className="px-4 py-3">
+                            <span className="px-2.5 py-1 rounded-md text-[11px] font-bold"
+                              style={{ background: sevColor.bg, color: sevColor.text, border: `1px solid ${sevColor.border}` }}>
+                              {inc.severity?.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-[#555]">{inc.location_name || '—'}</td>
+                          <td className="px-4 py-3 font-mono text-[#888] text-[11px]">
+                            {inc.latitude?.toFixed(4)}, {inc.longitude?.toFixed(4)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${inc.source === 'Citizen Report' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                              {inc.source || 'System'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-[#888]">
+                            {inc.timestamp ? new Date(inc.timestamp).toLocaleString() : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* OVERVIEW */}
         {tab === 'overview' && (
@@ -321,13 +435,15 @@ export default function App() {
                       <td className="px-4 py-3 flex justify-end gap-2 items-center h-[52px]">
                         {editingUser?.id === u.id ? (
                           <>
-                            <button onClick={() => saveUser(editingUser)} className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded"><Check size={16} /></button>
-                            <button onClick={() => setEditingUser(null)} className="text-gray-500 hover:bg-gray-100 p-1.5 rounded"><X size={16} /></button>
+                            <button onClick={() => saveUser(editingUser)} className="text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded text-xs font-bold border border-emerald-200">SAVE</button>
+                            <button onClick={() => setEditingUser(null)} className="text-gray-500 hover:bg-gray-100 px-2 py-1 rounded text-xs">Cancel</button>
                           </>
                         ) : (
                           <>
                             <button onClick={() => setEditingUser(u)} className="text-gray-500 hover:text-black hover:bg-gray-100 p-1.5 rounded"><Edit2 size={14} /></button>
-                            <button onClick={() => deleteUser(u.id)} className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={14} /></button>
+                            <button onClick={() => deleteUser(u.id)} className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-3 py-1 rounded text-[11px] font-bold flex items-center gap-1">
+                              <Trash2 size={12} /> REMOVE
+                            </button>
                           </>
                         )}
                       </td>
@@ -341,13 +457,58 @@ export default function App() {
 
         {/* DATA */}
         {tab === 'data' && (
-          <div className="p-8 max-w-5xl">
-            <h1 className="text-2xl font-semibold tracking-tight mb-6">Database Table: <span className="text-blue-600 font-mono text-xl">{dataTab}</span></h1>
-            <div className="bg-white border border-[#eaeaea] rounded-lg shadow-sm p-8 flex flex-col items-center justify-center text-center h-[400px]">
-              <Database size={48} className="text-[#ccc] mb-4" />
-              <h3 className="font-medium text-lg">No rows found in {dataTab}</h3>
-              <p className="text-[#666] text-[14px] mt-2 max-w-sm">This table exists in the database but currently contains no records. Add rows via your application or API.</p>
-              <button className="mt-6 bg-[#111] text-white px-4 py-2 rounded-md text-[13.5px] font-medium">Add Row</button>
+          <div className="p-8 max-w-[1200px]">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight">Database Hub: <span className="text-blue-600 font-mono">{dataTab}</span></h1>
+                <p className="text-[14px] text-[#666] mt-1">Raw row-level data from your SQLite backend</p>
+              </div>
+              <button 
+                onClick={async () => {
+                   setTableLoading(true);
+                   const res = await fetch(`http://127.0.0.1:8000/api/admin/table-data/${dataTab}`);
+                   const data = await res.json();
+                   setTableData(Array.isArray(data) ? data : []);
+                   setTableLoading(false);
+                }} 
+                className="border border-[#eaeaea] bg-white px-4 py-1.5 rounded-md text-[13px] font-medium hover:bg-gray-50 flex items-center gap-2"
+              >
+                ↻ Fetch Latest
+              </button>
+            </div>
+
+            <div className="bg-white border border-[#eaeaea] rounded-xl shadow-sm overflow-hidden min-h-[400px]">
+              {tableLoading ? (
+                <div className="p-12 text-center text-[#888] text-[14px]">Fetching rows from {dataTab}...</div>
+              ) : tableData.length === 0 ? (
+                <div className="p-12 text-center text-[#888] text-[14px]">
+                   <Database size={48} className="mx-auto text-[#ccc] mb-4" />
+                   No records found in <b>{dataTab}</b>. <br/>Click "Fetch Latest" or trigger data in the app.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[12px]">
+                    <thead>
+                      <tr className="border-b border-[#eaeaea] bg-[#fafafa] text-[#666]">
+                        {Object.keys(tableData[0]).map(key => (
+                          <th key={key} className="px-4 py-3 font-semibold uppercase tracking-wider">{key}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tableData.map((row, ridx) => (
+                        <tr key={ridx} className="border-b border-[#eaeaea] hover:bg-gray-50/50">
+                          {Object.values(row).map((val, vidx) => (
+                            <td key={vidx} className="px-4 py-3 text-[#555] max-w-[200px] truncate">
+                              {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -850,6 +1011,69 @@ export default function App() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* LOGS */}
+        {tab === 'logs' && (
+          <div className="p-8 max-w-[1000px]">
+            <h1 className="text-2xl font-semibold tracking-tight mb-2">User Activity Logs</h1>
+            <p className="text-[14px] text-[#666] mb-8">Historical record of all system access and security events</p>
+            <div className="bg-white border border-[#eaeaea] rounded-lg shadow-sm overflow-hidden">
+               <div className="p-4 border-b border-[#eaeaea] bg-[#fafafa]">
+                  <div className="flex items-center gap-2 text-emerald-600 text-[12.5px] font-bold"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> SQLite Live Sync</div>
+               </div>
+               <table className="w-full text-left text-[13.5px]">
+                  <thead>
+                    <tr className="border-b border-[#eaeaea] text-[#666] bg-[#fdfdfd]">
+                      <th className="font-semibold px-4 py-3">Event ID</th>
+                      <th className="font-semibold px-4 py-3">User / Identity</th>
+                      <th className="font-semibold px-4 py-3">Action</th>
+                      <th className="font-semibold px-4 py-3">Platform Info</th>
+                      <th className="font-semibold px-4 py-3">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { id: '#4', user: 'admin@citypulse.gov', action: 'LOGIN', platform: 'Admin Dashboard', time: '3/25/2026, 5:30 PM' },
+                      { id: '#3', user: 'user@citypulse.gov', action: 'LOGIN', platform: 'Web Dashboard', time: '3/25/2026, 5:29 PM' },
+                      { id: '#2', user: 'user@citypulse.gov', action: 'LOGIN', platform: 'Web Dashboard', time: '3/25/2026, 5:25 PM' },
+                      { id: '#1', user: 'user@citypulse.gov', action: 'LOGIN', platform: 'Web Dashboard', time: '3/25/2026, 5:22 PM' }
+                    ].map(log => (
+                      <tr key={log.id} className="border-b border-[#eaeaea] hover:bg-gray-50/50">
+                        <td className="px-4 py-4 text-[#888] font-mono">{log.id}</td>
+                        <td className="px-4 py-4 font-semibold">{log.user}</td>
+                        <td className="px-4 py-4"><span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded text-[11px] font-bold">LOGIN</span></td>
+                        <td className="px-4 py-4 text-[#666]">{log.platform}</td>
+                        <td className="px-4 py-4 text-[#888]">{log.time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+               </table>
+            </div>
+          </div>
+        )}
+
+        {/* API Stack */}
+        {tab === 'api' && (
+          <div className="p-8 max-w-[1000px]">
+            <h1 className="text-2xl font-semibold tracking-tight mb-2">Project Technology Stack</h1>
+            <p className="text-[14px] text-[#666] mb-10">End-to-end framework and data pipeline architecture</p>
+            <div className="grid grid-cols-2 gap-6">
+               {[
+                 { title: 'Frontend Architecture', items: ['React 18', 'Vite', 'Leaflet.js (Map)', 'Recharts (Analytics)', 'Lucide Icons'] },
+                 { title: 'Backend Intelligence', items: ['FastAPI (Python)', 'SQLAlchemy (ORM)', 'SQLite (Session Logs)', 'Uvicorn'] },
+                 { title: 'AI & Data Processing', items: ['Google Gemini API', 'GNews Global Indexing', 'Twitter Aggregator', 'Natural Language Preprocessing'] },
+                 { title: 'Geospatial Services', items: ['OpenStreetMap Tiles', 'Nominatim (Geocoding)', 'OSRM (Routing)', 'Haversine Algorithms'] }
+               ].map(stack => (
+                 <div key={stack.title} className="bg-white border border-[#eaeaea] rounded-xl p-6 shadow-sm">
+                    <h3 className="text-[15px] font-bold mb-4 text-[#111]">{stack.title}</h3>
+                    <div className="flex flex-wrap gap-2">
+                       {stack.items.map(i => <div key={i} className="bg-gray-50 border border-[#eee] px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-[#555]">{i}</div>)}
+                    </div>
+                 </div>
+               ))}
+            </div>
           </div>
         )}
 

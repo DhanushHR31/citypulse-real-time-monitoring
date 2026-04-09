@@ -12,6 +12,12 @@ class EventBase(BaseModel):
     longitude: float
     source: str
     location_name: Optional[str] = None
+    confidence_score: Optional[float] = 0.5
+    crowd_density: Optional[str] = None
+    impact_analysis: Optional[str] = None
+    map_symbol: Optional[str] = "📍"
+    media_url: Optional[str] = None
+    ai_summary: Optional[str] = None
 
 class EventCreate(EventBase):
     pass
@@ -21,7 +27,7 @@ class Event(EventBase):
     timestamp: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- User Schemas ---
 class UserBase(BaseModel):
@@ -36,7 +42,7 @@ class User(UserBase):
     preferences: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Prediction Schemas ---
 class PredictionBase(BaseModel):

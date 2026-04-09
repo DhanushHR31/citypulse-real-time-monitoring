@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from database import get_db
 import models
 from pydantic import BaseModel
 import hashlib
+import random
+import string
+from services.email_service import send_login_notification_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -21,7 +24,7 @@ class UserLogin(BaseModel):
     password: str
 
 @router.post("/register")
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
+def register_user(user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -37,18 +40,50 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Send Welcome/Login Email
+    background_tasks.add_task(send_login_notification_email, new_user.email, new_user.name or new_user.email)
+    
+    # Log registration
+    log = models.UserLog(user_id=new_user.id, username=new_user.email, action="REGISTER")
+    db.add(log)
+    db.commit()
+    
     return {"message": "User registered successfully", "user": {"id": new_user.id, "email": new_user.email, "name": new_user.name, "phone": new_user.phone}}
 
 @router.post("/login")
-def login_user(user: UserLogin, db: Session = Depends(get_db)):
+def login_user(user: UserLogin, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if not db_user:
         raise HTTPException(status_code=400, detail="Invalid email or password")
     
     if db_user.password != hash_password(user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
-        
-    return {"message": "Login successful", "user": {"id": db_user.id, "email": db_user.email, "name": db_user.name, "phone": db_user.phone, "role": db_user.role}}
+    
+    # Send Login Notification Email
+    background_tasks.add_task(send_login_notification_email, db_user.email, db_user.name or db_user.email)
+    
+    # Log directly for faster user experience in demo.
+    log = models.UserLog(user_id=db_user.id, username=db_user.email, action="LOGIN_SUCCESS")
+    db.add(log)
+    db.commit()
+    
+    return {
+        "status": "success",
+        "message": "Login successful",
+        "user": {
+            "id": db_user.id,
+            "email": db_user.email,
+            "name": db_user.name,
+            "phone": db_user.phone,
+            "role": db_user.role
+        }
+    }
+
+@router.get("/logs")
+def get_user_logs(db: Session = Depends(get_db)):
+    logs = db.query(models.UserLog).order_by(models.UserLog.timestamp.desc()).all()
+    return [{"id": l.id, "username": l.username, "action": l.action, "timestamp": l.timestamp.isoformat(), "info": l.log_info} for l in logs]
 
 @router.get("/")
 def get_all_users(db: Session = Depends(get_db)):
@@ -96,6 +131,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    db.query(models.UserLog).filter(models.UserLog.user_id == user_id).delete()
     db.delete(db_user)
     db.commit()
     return {"message": "User deleted successfully"}

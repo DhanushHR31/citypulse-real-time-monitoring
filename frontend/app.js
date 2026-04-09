@@ -4,7 +4,7 @@
 // ============================================================
 
 // ─── Global State ────────────────────────────────────────────
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://127.0.0.1:8000";
 let map, currentTileLayer, currentPolyline, heatmapLayer;
 let markers = [];          // Event map markers
 let naviMarkers = [];      // Start/End navigation markers
