@@ -9,3 +9,7 @@ python-multipart
 google-generativeai
 jinja2
 email-validator
+pandas
+numpy
+scikit-learn
+joblib
