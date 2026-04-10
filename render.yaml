@@ -1,29 +1,29 @@
+version: 1
 services:
-  # 🚀 CITYPULSE BACKEND (FastAPI)
+  # 🚀 CITYPULSE BACKEND (FastAPI Web Service)
   - type: web
     name: citypulse-backend
     env: python
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    rootDir: backend
     envVars:
       - key: GEMINI_API_KEY
-        sync: false # Set this in Render dashboard
-      - key: NEWS_API_KEY
         sync: false
       - key: EMAIL_SENDER
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
       - key: DATABASE_URL
-        value: sqlite:///./city_intelligence.db # Or use a Render Postgres
+        value: sqlite:///./city_intelligence.db
 
-  # 🌐 CITYPULSE FRONTEND (React/Vite Static Site)
-  - type: static
+  # 🌐 CITYPULSE FRONTEND (React Production Web Service)
+  - type: web
     name: citypulse-frontend
+    env: node
     rootDir: react-ui
     buildCommand: npm install && npm run build
-    publishPath: dist
+    startCommand: npx serve -s dist
     envVars:
       - key: VITE_API_URL
         fromService:
