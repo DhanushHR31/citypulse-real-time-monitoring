@@ -8,34 +8,32 @@ export default function SocialMonitor({ events, onRefresh, addToast, API_URL }) 
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   // 🛰️ EXCLUSIVE LIVE FEED: Only show incidents from social sources (Twitter, IG, News, Maps)
-  const socialEvents = useMemo(() => {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    return events
-      .filter(e => {
-        const evDate = new Date(e.timestamp);
-        return evDate >= twentyFourHoursAgo;
-      })
-      .filter(e => ['Twitter', 'Instagram', 'Facebook', 'X/Twitter', 'Sentinel Live Feed', 'Google Maps', 'NewsAPI', 'Google News RSS', 'AI Real-Time Master Prompt', 'ChatGPT / Gemini Verified'].includes(e.source))
-      .map(e => ({
-        ...e,
-        id: `live-${e.id}`,
-        platform: e.source.split(' ')[0].toLowerCase(),
-        text: e.desc || e.title,
-        loc: e.loc || e.location_name || 'Bengaluru',
-        time: e.time,
-        sev: e.sev,
-        verified: true,
-        tags: [e.type || 'Urban Alert'],
-        lat: e.lat,
-        lng: e.lng,
-        icon: e.icon || '📍'
-      }));
+  const socialEventsAll = useMemo(() => {
+    return events.filter(e => ['Twitter', 'Instagram', 'Facebook', 'X/Twitter', 'Sentinel Live Feed', 'Google Maps', 'NewsAPI', 'Google News RSS', 'AI Real-Time Master Prompt', 'ChatGPT / Gemini Verified'].includes(e.source));
   }, [events]);
 
-  const filtered = socialEvents.filter(s => 
-    (filter === 'All Platforms' || s.platform === filter.toLowerCase() || (filter === 'Twitter' && s.platform === 'x/twitter')) && 
-    (s.text.toLowerCase().includes(search.toLowerCase()) || !search)
-  );
+  const socialEvents24h = useMemo(() => {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return socialEventsAll.filter(e => new Date(e.timestamp) >= twentyFourHoursAgo);
+  }, [socialEventsAll]);
+
+  const filtered = socialEvents24h.filter(s => 
+    (filter === 'All Platforms' || s.source.toLowerCase().includes(filter.toLowerCase()) || (filter === 'Twitter' && s.source.toLowerCase().includes('twitter'))) && 
+    ((s.desc || s.title).toLowerCase().includes(search.toLowerCase()) || !search)
+  ).map(e => ({
+    ...e,
+    id: `live-${e.id}`,
+    platform: e.source.split(' ')[0].toLowerCase(),
+    text: e.desc || e.title,
+    loc: e.loc || e.location_name || 'Bengaluru',
+    time: e.time,
+    sev: e.sev,
+    verified: true,
+    tags: [e.type || 'Urban Alert'],
+    lat: e.lat,
+    lng: e.lng,
+    icon: e.icon || '📍'
+  }));
 
   const stats = {
     total: filtered.length,
@@ -82,7 +80,7 @@ export default function SocialMonitor({ events, onRefresh, addToast, API_URL }) 
 
       {/* 📍 LIVE SOCIAL MAP */}
       <div className="cp-card" style={{ padding: 0, overflow: 'hidden', height: '350px', marginBottom: 16 }}>
-        <LiveMap events={filtered} height="350px" zoom={11} />
+        <LiveMap events={socialEventsAll.map(e => ({ ...e, id: `map-${e.id}`, lat: e.lat, lng: e.lng, icon: e.icon || '📍', title: e.title, desc: e.desc }))} height="350px" zoom={11} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
