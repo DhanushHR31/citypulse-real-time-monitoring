@@ -18,13 +18,12 @@ services:
       - key: DATABASE_URL
         value: sqlite:///./city_intelligence.db # Or use a Render Postgres
 
-  # 🌐 CITYPULSE FRONTEND (React/Vite)
-  - type: web
+  # 🌐 CITYPULSE FRONTEND (React/Vite Static Site)
+  - type: static
     name: citypulse-frontend
-    env: static
+    rootDir: react-ui
     buildCommand: npm install && npm run build
     publishPath: dist
-    rootDir: react-ui
     envVars:
       - key: VITE_API_URL
         fromService:
