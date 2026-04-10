@@ -19,7 +19,7 @@ services:
         value: sqlite:///./city_intelligence.db # Or use a Render Postgres
 
   # 🌐 CITYPULSE FRONTEND (React/Vite)
-  - type: static
+  - type: web
     name: citypulse-frontend
     env: static
     buildCommand: npm install && npm run build
