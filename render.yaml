@@ -1,9 +1,10 @@
 version: 1
 services:
-  # 🚀 CITYPULSE BACKEND (FastAPI Web Service)
+  # 🚀 BACKEND (FastAPI - Free Plan)
   - type: web
     name: citypulse-backend
     env: python
+    plan: free # Explicitly setting to FREE to avoid card requirement
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -14,16 +15,13 @@ services:
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
-      - key: DATABASE_URL
-        value: sqlite:///./city_intelligence.db
 
-  # 🌐 CITYPULSE FRONTEND (React Production Web Service)
-  - type: web
+  # 🌐 FRONTEND (React Static Site - Always Free)
+  - type: static
     name: citypulse-frontend
-    env: node
     rootDir: react-ui
     buildCommand: npm install && npm run build
-    startCommand: npx serve -s dist
+    publishPath: dist
     envVars:
       - key: VITE_API_URL
         fromService:
