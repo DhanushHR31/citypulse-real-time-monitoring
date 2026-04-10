@@ -1,0 +1,106 @@
+Category,IncidentType
+EMERGENCY,Road accident
+EMERGENCY,Hit and run case
+EMERGENCY,Multi-vehicle collision
+EMERGENCY,Fire accident (building/vehicle)
+EMERGENCY,Building collapse
+EMERGENCY,Gas leak
+EMERGENCY,Chemical leak
+EMERGENCY,Explosion/blast
+EMERGENCY,Medical emergency
+EMERGENCY,Ambulance request
+EMERGENCY,Electrocution
+EMERGENCY,Drowning incident
+EMERGENCY,Landslide
+EMERGENCY,Tree fall on road
+EMERGENCY,Rescue operation
+TRAFFIC,Traffic congestion
+TRAFFIC,Heavy traffic jam
+TRAFFIC,Road blockage
+TRAFFIC,Road closure
+TRAFFIC,Diversion applied
+TRAFFIC,Flyover closure
+TRAFFIC,Signal failure
+TRAFFIC,Traffic signal blinking
+TRAFFIC,Vehicle breakdown
+TRAFFIC,Illegal parking issue
+TRAFFIC,Accident causing traffic
+TRAFFIC,VIP movement traffic halt
+TRAFFIC,Metro delay
+TRAFFIC,Bus breakdown
+TRAFFIC,Toll congestion
+WEATHER,Heavy rainfall
+WEATHER,Flooding
+WEATHER,Waterlogging
+WEATHER,Road submerged
+WEATHER,Storm warning
+WEATHER,Thunderstorm
+WEATHER,Lightning alert
+WEATHER,Heatwave alert
+WEATHER,Cyclone warning
+WEATHER,Low visibility (fog)
+WEATHER,Strong winds
+WEATHER,Rain-related traffic jam
+CIVIC,Water shortage
+CIVIC,No water supply
+CIVIC,Power cut
+CIVIC,Power fluctuation
+CIVIC,Road repair work
+CIVIC,Potholes issue
+CIVIC,Drainage overflow
+CIVIC,Sewage leakage
+CIVIC,Garbage overflow
+CIVIC,Garbage strike
+CIVIC,Streetlight failure
+CIVIC,BBMP maintenance work
+CIVIC,Pipeline damage
+CIVIC,Road digging
+PUBLIC,Festival celebration
+PUBLIC,Religious gathering
+PUBLIC,Political rally
+PUBLIC,Protest
+PUBLIC,Strike (bandh)
+PUBLIC,Public meeting
+PUBLIC,Marathon event
+PUBLIC,Cultural event
+PUBLIC,Music concert
+PUBLIC,Exhibition
+PUBLIC,Sports event
+PUBLIC,College fest
+CROWD,High crowd density
+CROWD,Crowd congestion
+CROWD,Stampede risk
+CROWD,Overcrowded area
+CROWD,Mall overcrowding
+CROWD,Queue congestion
+CROWD,Panic situation
+CROWD,Crowd control required
+LAW_AND_ORDER,Crime reported
+LAW_AND_ORDER,Robbery
+LAW_AND_ORDER,Theft
+LAW_AND_ORDER,Assault
+LAW_AND_ORDER,Riot situation
+LAW_AND_ORDER,Police activity
+LAW_AND_ORDER,Security alert
+LAW_AND_ORDER,Curfew enforcement
+LAW_AND_ORDER,Checkpoint setup
+HEALTH,Hospital overcrowding
+HEALTH,Ambulance delay
+HEALTH,Emergency response delay
+HEALTH,Disease outbreak alert
+HEALTH,COVID-like symptoms alert
+HEALTH,Blood requirement emergency
+INFRASTRUCTURE,Bridge damage
+INFRASTRUCTURE,Flyover crack
+INFRASTRUCTURE,Road collapse
+INFRASTRUCTURE,Construction hazard
+INFRASTRUCTURE,Building unsafe
+INFRASTRUCTURE,Water pipe burst
+INFRASTRUCTURE,Electric pole damage
+TRANSPORT,Metro delay
+TRANSPORT,Train delay
+TRANSPORT,Bus route change
+TRANSPORT,Bus breakdown
+TRANSPORT,Airport delay
+TRANSPORT,Flight delay impact
+TRANSPORT,Cab shortage

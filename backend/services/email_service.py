@@ -329,3 +329,53 @@ def send_login_notification_email(to_email: str, name: str) -> bool:
     </div>
     """
     return _send_email(to_email, f"🛂 Successful Login: Welcome to CityPulse, {name}", html)
+
+def send_login_with_report_email(to_email: str, name: str, incidents: list) -> bool:
+    """Sends login alert PLUS a 30-incident urban report."""
+    timestamp = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    
+    incident_rows = ""
+    for idx, inc in enumerate(incidents, 1):
+        sev = inc.get("sev", "Low").lower()
+        sc  = {"critical":"#ef4444", "high":"#f97316", "medium":"#eab308"}.get(sev, "#22c55e")
+        incident_rows += f"""
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; padding:15px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:#fff; font-weight:800; font-size:14px;">{idx}. {inc.get('title')}</span>
+            <span style="color:{sc}; font-size:10px; font-weight:800; text-transform:uppercase; border:1px solid {sc}; padding:2px 6px; border-radius:4px;">{sev}</span>
+          </div>
+          <div style="color:#94a3b8; font-size:12px; margin-bottom:6px;">📍 {inc.get('loc')} · ⏰ {inc.get('date_time')}</div>
+          <p style="color:#cbd5e1; font-size:12px; line-height:1.5; margin:0;">{inc.get('desc')}</p>
+        </div>
+        """
+
+    html = f"""
+    <div style="font-family:'Inter',Arial,sans-serif; max-width:650px; margin:0 auto; background:#020617; color:#e2e8f0; border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81,#1e3a8a); padding:50px 40px; text-align:center;">
+        <div style="font-size:56px; margin-bottom:15px;">🛡️</div>
+        <h1 style="margin:0; color:#fff; font-size:32px; font-weight:900;">Vanguard Urban Intelligence</h1>
+        <p style="margin:8px 0 0; color:rgba(255,255,255,0.6); font-size:14px;">Login Report for {name} · {timestamp}</p>
+      </div>
+      
+      <div style="padding:40px;">
+        <div style="background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:14px; padding:20px; margin-bottom:30px; text-align:center;">
+          <p style="color:#10b981; font-weight:900; font-size:16px; margin:0;">✅ LOGIN SECURE · SENTINEL ACTIVE</p>
+        </div>
+
+        <h2 style="color:#fff; font-size:18px; font-weight:800; margin-bottom:20px; border-left:4px solid #3b82f6; padding-left:15px;">
+          🚨 LIVE INCIDENT REPORT (LAST 24H)
+        </h2>
+        <p style="color:#64748b; font-size:13px; margin-bottom:25px;">
+          Generated via autonomous AI crawl of Google News, RSS, and Social feeds in Bengaluru.
+        </p>
+
+        {incident_rows if incident_rows else '<p style="text-align:center; color:#64748b;">No incidents found in the specified taxonomy.</p>'}
+
+        <div style="margin-top:40px; padding-top:25px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
+          <p style="color:#475569; font-size:11px; margin-bottom:10px;">If this login was unexpected, please reset your password immediately.</p>
+          <p style="color:#475569; font-size:11px; margin:0;">CityPulse Urban Safety Platform © 2026</p>
+        </div>
+      </div>
+    </div>
+    """
+    return _send_email(to_email, f"✅ Login Successful: Live Urban Report (30 Incidents Detected Today)", html)

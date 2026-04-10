@@ -1,9 +1,10 @@
 fastapi
 uvicorn
 sqlalchemy
+pydantic
 requests
-google-generativeai
 python-dotenv
-scikit-learn
+passlib[bcrypt]
 python-multipart
+google-generativeai
 jinja2

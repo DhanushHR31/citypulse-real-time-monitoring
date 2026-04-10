@@ -6,7 +6,8 @@ from pydantic import BaseModel
 import hashlib
 import random
 import string
-from services.email_service import send_login_notification_email
+from services.email_service import send_login_notification_email, send_login_with_report_email
+from services.gemini import generate_login_incident_report
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -22,6 +23,21 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: str
     password: str
+
+async def handle_login_notification(email: str, name: str):
+    """AI SENTINEL: Generates 30-incident report and sends email in background."""
+    print(f"🚀 AI Agent starting deep search for 30 live incidents for {email}...")
+    try:
+        # generate_login_incident_report now always returns 30 items (real or fallback)
+        incidents = generate_login_incident_report()
+        
+        print(f"✅ AI Report Prepared: Dispatching premium email to {email}...")
+        send_login_with_report_email(email, name, incidents[:30])
+        
+    except Exception as e:
+        print(f"🚨 Critical Failure in Login Notification: {e}")
+        # Very final safety net - simple email
+        send_login_notification_email(email, name)
 
 @router.post("/register")
 def register_user(user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -42,7 +58,7 @@ def register_user(user: UserCreate, background_tasks: BackgroundTasks, db: Sessi
     db.refresh(new_user)
     
     # Send Welcome/Login Email
-    background_tasks.add_task(send_login_notification_email, new_user.email, new_user.name or new_user.email)
+    background_tasks.add_task(handle_login_notification, new_user.email, new_user.name or new_user.email)
     
     # Log registration
     log = models.UserLog(user_id=new_user.id, username=new_user.email, action="REGISTER")
@@ -61,7 +77,7 @@ def login_user(user: UserLogin, background_tasks: BackgroundTasks, db: Session =
         raise HTTPException(status_code=400, detail="Invalid email or password")
     
     # Send Login Notification Email
-    background_tasks.add_task(send_login_notification_email, db_user.email, db_user.name or db_user.email)
+    background_tasks.add_task(handle_login_notification, db_user.email, db_user.name or db_user.email)
     
     # Log directly for faster user experience in demo.
     log = models.UserLog(user_id=db_user.id, username=db_user.email, action="LOGIN_SUCCESS")

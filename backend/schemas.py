@@ -59,3 +59,19 @@ class Prediction(PredictionBase):
 
     class Config:
         orm_mode = True
+
+# --- Safety Alert Schemas ---
+class SafetyAlertBase(BaseModel):
+    title: str
+    severity: str
+    message: str
+
+class SafetyAlertCreate(SafetyAlertBase):
+    pass
+
+class SafetyAlert(SafetyAlertBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True

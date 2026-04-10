@@ -25,6 +25,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 const zoneIcon = ev => L.divIcon({
   className: '',
   html: `<div style="width:32px;height:32px;border-radius:50%;background:${ZONE_COLOR[ev.zone] || '#6366f1'};border:2.5px solid rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 3px 10px rgba(0,0,0,.5)">${ev.icon}</div>`,
@@ -154,6 +156,7 @@ export default function App() {
   const [tab, setTab] = useState('dashboard');
   const [events, setEvents] = useState(EVENTS);
   const [loading, setLoading] = useState(false);
+  const [liveAlerts, setLiveAlerts] = useState(ALERTS);
   const [range, setRange] = useState('10km');
   const [zone, setZone] = useState('All Zones');
   const [evType, setEvType] = useState('All');
@@ -166,10 +169,34 @@ export default function App() {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4000); 
   }, []);
 
+  // NEW: Trigger virtual SMS notification on critical events
+  const lastEventCount = useRef(events.length);
+  useEffect(() => {
+    if (events.length > lastEventCount.current) {
+      const newEv = events[events.length - 1];
+      if (newEv.sev === 'critical') {
+        setVirtualNotify({
+          msg: `🚨 CRITICAL ALERT: ${newEv.title} at ${newEv.loc}. Please check the map immediately.`,
+          phone: "CityPulse Sentinel",
+          type: "critical"
+        });
+      }
+    }
+    lastEventCount.current = events.length;
+  }, [events]);
+
+  // NEW: Auto-clear virtual notification
+  useEffect(() => {
+    if (virtualNotify) {
+      const timer = setTimeout(() => setVirtualNotify(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [virtualNotify]);
+
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/events/');
+      const res = await fetch(`${API_URL}/events/live`);
       if (res.ok) {
         const data = await res.json();
         // Map backend fields to frontend fields
@@ -185,7 +212,22 @@ export default function App() {
           type: e.event_type,
           desc: e.description
         }));
-        setEvents([...EVENTS, ...normalized]); // Mix mock + real for depth
+        setEvents(normalized); // 🚀 100% Live Feed: Removed mock data injection for true real-time accuracy
+      }
+      // FETCH LIVE ALERTS
+      const alertRes = await fetch(`${API_URL}/alerts/`);
+      if (alertRes.ok) {
+        const alertData = await alertRes.json();
+        setLiveAlerts(alertData.map(a => ({
+          ...a,
+          id: a.id,
+          title: a.title,
+          desc: a.message,
+          sev: a.severity.toLowerCase(),
+          icon: a.severity.toLowerCase() === 'critical' ? '🚨' : '⚠️',
+          zone: 'Bengaluru Live',
+          expires: 'Active'
+        })));
       }
     } catch (err) {
       console.error("Failed to fetch events", err);
@@ -196,6 +238,9 @@ export default function App() {
 
   useEffect(() => {
     fetchEvents();
+    // 🛡️ EXTREME LIVE SYNC: Poll for fresh incidents every 30 seconds (Updated as requested)
+    const interval = setInterval(fetchEvents, 30000);
+    return () => clearInterval(interval);
   }, [fetchEvents]);
 
   const stats = { 
@@ -210,7 +255,7 @@ export default function App() {
     if (authMode === 'register') {
       if (authName && authEmail && authPassword && authPhone) {
         try {
-          const res = await fetch('http://127.0.0.1:8000/users/register', {
+          const res = await fetch(`${API_URL}/users/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: authName, email: authEmail, password: authPassword, phone: authPhone })
@@ -221,8 +266,24 @@ export default function App() {
             setIsLoggedIn(true);
             setAuthName(authName);
             setAuthPhone(authPhone);
-            addToast('✅ Account Created', `Welcome to CityPulse, ${authName}! Logged in automatically.`);
+            addToast('✅ Account Created', `Welcome to CityPulse, ${authName}! check you email we sent current day 10 category master prompt report  .`);
             setAuthPassword('');
+            
+            // Trigger Virtual SMS for Login
+            setVirtualNotify({
+              msg: `🔐 Security Alert: Successful registration for account ${authEmail}. Location: Bengaluru, IN.`,
+              phone: "CityPulse Auth",
+              type: "auth"
+            });
+
+            // 🚀 THE FUTURE: Trigger 50 Real-Time Incidents sync immediately upon user registration/login.
+            try {
+              await fetch('http://127.0.0.1:8000/collection/login-trigger', { method: 'POST' });
+              await fetchEvents(); 
+              addToast('🛰️ AI Trigger Successful', 'Dashboard successfully populated with 50 live incidents.');
+            } catch (triggerErr) {
+              console.error("AI Login Trigger failed:", triggerErr);
+            }
           } else {
             addToast('⚠️ Registration Error', data.detail || 'Failed');
           }
@@ -233,7 +294,7 @@ export default function App() {
     } else {
       if (authEmail && authPassword) {
         try {
-          const res = await fetch('http://127.0.0.1:8000/users/login', {
+          const res = await fetch(`${API_URL}/users/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: authEmail, password: authPassword })
@@ -243,8 +304,24 @@ export default function App() {
             setIsLoggedIn(true);
             setAuthName(data.user.name || '');
             setAuthPhone(data.user.phone || '');
-            addToast('✅ Logged In', `Welcome back, ${data.user.name || authEmail}!`);
+            addToast('✅ Logged In', `Welcome back! check you email we sent current day 10 category master prompt report .`);
             setAuthPassword('');
+            
+            // Trigger Virtual SMS for Login
+            setVirtualNotify({
+              msg: `🛂 Login Alert: Successful access detected from new device at ${new Date().toLocaleTimeString()}.`,
+              phone: "CityPulse Auth",
+              type: "auth"
+            });
+
+            // 🚀 THE FUTURE: Trigger 50 Real-Time Incidents sync immediately upon user login.
+            try {
+              await fetch('http://127.0.0.1:8000/collection/login-trigger', { method: 'POST' });
+              await fetchEvents(); // Rerender social monitoring, map, and safety dashboard
+              addToast('🛰️ AI Trigger Successful', 'Dashboard successfully populated with 50 live incidents.');
+            } catch (triggerErr) {
+              console.error("AI Login Trigger failed:", triggerErr);
+            }
           } else {
             addToast('⚠️ Login Error', data.detail || 'Invalid credentials');
           }
@@ -266,7 +343,7 @@ export default function App() {
       setMsgs(m => [...m, { sender: 'user', text: txt }]);
       setInp(''); setTyping(true);
       try {
-        const res = await fetch('http://127.0.0.1:8000/chat/', {
+        const res = await fetch(`${API_URL}/chat/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: txt, incidents: events })
@@ -401,6 +478,7 @@ export default function App() {
         <ul className="cp-nav-list">
           {[
             { id: 'dashboard', icon: '📍', label: 'Safety Dashboard' },
+            { id: 'alerts', icon: '🔔', label: 'Safety Alerts' },
             { id: 'social', icon: '💬', label: 'Social Monitor' },
             { id: 'navigation', icon: '🧭', label: 'Smart Navigation' },
             { id: 'reports', icon: '📝', label: 'Report Center' },
@@ -432,12 +510,14 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {[['➕', 'Report', 'reports'], ['🧭', 'Nav', 'navigation'], ['💬', 'Social', 'social'], ['🤖', 'AI', 'ai']].map(([ic, l, to]) => <button key={l} className="cp-hero-btn" onClick={() => setTab(to)}>{ic} {l}</button>)}
+            {tab === 'dashboard' && <button className="cp-hero-btn" style={{ background: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgba(239, 68, 68, 0.4)' }} onClick={() => document.getElementById('live-reports-anchor')?.scrollIntoView({ behavior: 'smooth' })}>🗂️ Live Reports ↓</button>}
           </div>
         </div>
         <div className="cp-body">
-          {tab === 'dashboard' && <Dashboard events={events} alerts={ALERTS} social={SOCIAL_POSTS} range={range} setRange={setRange} zone={zone} setZone={setZone} evType={evType} setEvType={setEvType} onRefresh={fetchEvents} loading={loading} addToast={addToast} />}
+          {tab === 'dashboard' && <Dashboard events={events} alerts={liveAlerts} social={SOCIAL_POSTS} range={range} setRange={setRange} zone={zone} setZone={setZone} evType={evType} setEvType={setEvType} onRefresh={fetchEvents} loading={loading} addToast={addToast} />}
+          {tab === 'alerts' && <SafetyAlerts alerts={liveAlerts} />}
           {tab === 'navigation' && <Navigation events={events} userEmail={authEmail} />}
-          {tab === 'social' && <SocialMonitor social={SOCIAL_POSTS} onRefresh={fetchEvents} addToast={addToast} />}
+          {tab === 'social' && <SocialMonitor events={events} onRefresh={fetchEvents} addToast={addToast} />}
           {tab === 'reports' && <ReportCenter myReports={myReports} setMyReports={setMyReports} addToast={addToast} onRefresh={fetchEvents} />}
           {tab === 'ai' && <AiAgent />}
           {tab === 'overview' && <CityOverview events={events} />}

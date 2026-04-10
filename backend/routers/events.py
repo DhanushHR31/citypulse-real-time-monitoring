@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import models, schemas
 from database import get_db
+from datetime import datetime, timedelta
 import shutil
 import os
 import uuid
@@ -91,9 +92,15 @@ async def report_with_ai(
     return db_event
 
 @router.get("/", response_model=List[schemas.Event])
-def read_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    events = db.query(models.Event).offset(skip).limit(limit).all()
-    return events
+def read_all_events(skip: int = 0, limit: int = 500, db: Session = Depends(get_db)):
+    """Full SQL History for Admin/Audit"""
+    return db.query(models.Event).order_by(models.Event.timestamp.desc()).offset(skip).limit(limit).all()
+
+@router.get("/live", response_model=List[schemas.Event])
+def read_live_events(db: Session = Depends(get_db)):
+    """SENTINEL LIVE FEED: Top 50 real-time incidents mapped to dashboard"""
+    # Fetch top 50 recent events descending
+    return db.query(models.Event).order_by(models.Event.timestamp.desc()).limit(50).all()
 
 @router.get("/{event_id}", response_model=schemas.Event)
 def read_event(event_id: int, db: Session = Depends(get_db)):

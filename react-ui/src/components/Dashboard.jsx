@@ -129,7 +129,35 @@ export default function Dashboard({ events, alerts, social, range, setRange, zon
 
   return (
     <div className="dash-layout">
-      <div className="dash-left">
+      <div className="dash-left" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
+        {/* ── LIVE TICKER ── */}
+        <div style={{ 
+          background: 'rgba(239, 68, 68, 0.12)', 
+          border: '1px solid rgba(239, 68, 68, 0.3)', 
+          borderRadius: 10, 
+          padding: '8px 16px', 
+          marginBottom: 12, 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 12,
+          overflow: 'hidden',
+          position: 'relative'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, color: '#ef4444', fontSize: '.75rem', whiteSpace: 'nowrap', borderRight: '1px solid rgba(239,68,68,0.2)', paddingRight: 12 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+            URGENT BREACHES
+          </div>
+          <div style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', fontSize: '.78rem', fontWeight: 600, color: '#f8fafc' }}>
+            <marquee scrollamount="4">
+              {events.filter(e => e.sev === 'critical').map(e => `🚨 [${e.loc.toUpperCase()}] ${e.title} — Verified via ${e.source || 'Social Feed'} • `).join(' ')}
+              {events.filter(e => e.sev === 'high' && e.sev !== 'critical').map(e => `⚠️ ${e.title} at ${e.loc} • `).join(' ')}
+            </marquee>
+          </div>
+          <button onClick={() => document.getElementById('live-reports-anchor').scrollIntoView({ behavior: 'smooth' })} 
+            style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#cbd5e1', fontSize: '.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Jump to Reports ↓
+          </button>
+        </div>
 
         {/* ── MAP CARD ── */}
         <div className="cp-card">
@@ -206,13 +234,20 @@ export default function Dashboard({ events, alerts, social, range, setRange, zon
         </div>
 
         {/* ── LIVE INCIDENT REPORT PANEL ── */}
-        <div className="cp-card" style={{ marginBottom: 14 }}>
+        <div className="cp-card" style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          flex: 1, 
+          minHeight: 400, 
+          marginBottom: 0,
+          overflow: 'hidden'
+        }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '1rem' }}>
-              🗂️ Live Incident Report
+            <div id="live-reports-anchor" style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '1.1rem' }}>
+              🗂️ Live Incident Intelligence
               <span style={{ background: '#ef4444', color: '#fff', fontSize: '.68rem', fontWeight: 700, padding: '2px 9px', borderRadius: 999 }}>{stats.critical} CRITICAL</span>
-              <span className="live-dot">● LIVE</span>
+              <span className="live-dot" style={{ animation: 'pulse 1s infinite' }}>● LIVE</span>
             </div>
             <span style={{ fontSize: '.75rem', color: 'var(--muted)', marginLeft: 'auto' }}>
               {rangeKm > 0 ? `${rangeFiltered.length} incidents within ${range}` : `${typeFiltered.length} total incidents`}
@@ -236,7 +271,15 @@ export default function Dashboard({ events, alerts, social, range, setRange, zon
           </div>
 
           {/* Incident cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 520, overflowY: 'auto' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 12, 
+            flex: 1,
+            overflowY: 'auto',
+            paddingRight: 6,
+            minHeight: 150
+          }}>
             {rangeFiltered.length === 0 && (
               <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '32px 0', fontSize: '.88rem' }}>
                 ✅ No incidents in this filter. Bengaluru looks clear!
@@ -248,11 +291,12 @@ export default function Dashboard({ events, alerts, social, range, setRange, zon
               const isExpanded = reportExpanded === ev.id;
               const isLoading = generatingReport === ev.id;
               return (
-                <div key={ev.id} style={{
-                  background: ev.sev === 'critical' ? 'rgba(239,68,68,0.06)' : ev.sev === 'high' ? 'rgba(249,115,22,0.05)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${ev.sev === 'critical' ? 'rgba(239,68,68,0.3)' : ev.sev === 'high' ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.07)'}`,
-                  borderLeft: `3px solid ${SEV_COLOR[ev.sev] || '#64748b'}`,
-                  borderRadius: 10, padding: '12px 14px', transition: 'all .2s',
+                <div key={ev.id} className={ev.sev === 'critical' ? 'critical-glow' : ''} style={{
+                  background: ev.sev === 'critical' ? 'rgba(239,68,68,0.12)' : ev.sev === 'high' ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${ev.sev === 'critical' ? 'rgba(239,68,68,0.5)' : ev.sev === 'high' ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                  borderLeft: `5px solid ${SEV_COLOR[ev.sev] || '#64748b'}`,
+                  borderRadius: 14, padding: '16px 18px', transition: 'all .3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: ev.sev === 'critical' ? '0 8px 24px rgba(239,68,68,0.15)' : '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                   {/* Top row */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
@@ -262,11 +306,12 @@ export default function Dashboard({ events, alerts, social, range, setRange, zon
                         <span style={{ fontWeight: 700, fontSize: '.88rem' }}>{ev.title}</span>
                         <Bdg sev={ev.sev} />
                       </div>
-                      <div style={{ fontSize: '.72rem', color: 'var(--muted)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span>📍 {ev.loc}</span>
+                      <div style={{ fontSize: '.72rem', color: 'var(--muted)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ cursor: 'pointer', color: '#6366f1', fontWeight: 600 }} onClick={() => setCenter([ev.lat, ev.lng])}>📍 {ev.loc}</span>
                         <span>🕒 {ev.time}</span>
                         {ev.source && <SourceTag source={ev.source} />}
-                        <span style={{ background: meta.color + '22', color: meta.color, border: `1px solid ${meta.color}44`, padding: '1px 7px', borderRadius: 999, fontSize: '.65rem', fontWeight: 600 }}>{ev.type || ev.event_type}</span>
+                        <span style={{ background: meta.color + '22', color: meta.color, border: `1px solid ${meta.color}44`, padding: '1px 7px', borderRadius: 999, fontSize: '.65rem', fontWeight: 700 }}>{ev.type || ev.event_type}</span>
+                        <button onClick={() => setCenter([ev.lat, ev.lng])} style={{ background: 'transparent', border: 'none', color: '#6366f1', fontSize: '.65rem', fontWeight: 800, cursor: 'pointer', padding: 0 }}>[FOCUS MAP]</button>
                       </div>
                     </div>
                     <button
@@ -342,17 +387,28 @@ export default function Dashboard({ events, alerts, social, range, setRange, zon
                      ))}
                      {rangeFiltered.length === 0 && <li>No active News/Maps hazards within {range}. Area is secure ✓</li>}
                   </ul>
-               </div>
-
-               <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', padding: 10, borderRadius: 8, marginTop: 4 }}>
-                  <div style={{ fontSize: '.68rem', fontWeight: 800, color: '#a78bfa', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    📸 LIVE SOURCE DISCOVERY
-                  </div>
-                  <div style={{ fontSize: '.7rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                    • Google Maps: Road closure data indexed.<br/>
-                    • IG/Social: Scanning tagged urban video feeds...<br/>
-                    • NewsAPI: Syncing local district reports.
-                  </div>
+                  <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', padding: 12, borderRadius: 10, marginTop: 4 }}>
+                      <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#a78bfa', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        📡 LIVE SOURCE INTELLIGENCE
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                           <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#a78bfa' }} />
+                           <div style={{ flex: 1, fontSize: '.68rem', color: '#94a3b8' }}>Google Maps: <span style={{ color: '#fff' }}>Road closure data synchronized</span></div>
+                           <span style={{ fontSize: '.6rem', color: '#22c55e' }}>● ACTIVE</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                           <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#a78bfa' }} />
+                           <div style={{ flex: 1, fontSize: '.68rem', color: '#94a3b8' }}>Social Media: <span style={{ color: '#fff' }}>Scanning tagged video feeds...</span></div>
+                           <span style={{ fontSize: '.6rem', color: '#6366f1' }}>● SCANNING</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                           <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#a78bfa' }} />
+                           <div style={{ flex: 1, fontSize: '.68rem', color: '#94a3b8' }}>News Engine: <span style={{ color: '#fff' }}>Syncing local district reports</span></div>
+                           <span style={{ fontSize: '.6rem', color: '#f59e0b' }}>● SYNCING</span>
+                        </div>
+                      </div>
+                   </div>
                </div>
             </div>
           </div>

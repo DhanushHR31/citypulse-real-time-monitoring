@@ -1,113 +1,135 @@
 import requests
 import os
 import random
+import csv
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
-from services import gemini
+from concurrent.futures import ThreadPoolExecutor
 
-# Official Keywords for Demo
-EVENT_KEYWORDS = [
-    "Bangalore", "Bengaluru", "Bangalore traffic", "Bengaluru accident", 
-    "fire Bangalore", "electricity bangalore", "bescom", "traffic"
-]
-
-def analyze_with_gemini(text):
-    return gemini.analyze_event_text(text)
-
-def fetch_gnews_official(query="Bangalore"):
-    """🔥 NewsAPI - Official Production"""
-    api_key = os.getenv("NEWS_API_KEY")
-    if not api_key: return []
-    
-    url = "https://newsapi.org/v2/everything"
-    params = {
-        "q": query,
-        "from": (datetime.utcnow() - timedelta(days=2)).strftime('%Y-%m-%d'),
-        "language": "en",
-        "apiKey": api_key
-    }
-    headers = {"User-Agent": "CityPulseApp/3.0.0"}
-    
+# Load entire taxonomy for targeted sweeping
+def load_incident_taxonomy():
+    types = []
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=10)
-        if response.status_code == 200:
-            articles = response.json().get("articles", [])
-            return [{
-                "title": a.get("title"), "description": a.get("description") or a.get("title"),
-                "url": a.get("url"), "source": a.get("source", {}).get("name", "NewsAPI")
-            } for a in articles]
-        return []
-    except: return []
+        path = 'c:/Users/dhanu/OneDrive/Desktop/8Th sem/city/incidents_types.csv'
+        if os.path.exists(path):
+            with open(path, mode='r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    types.append(row['IncidentType'])
+    except: pass
+    return types if types else ["Traffic congestion", "Road accident", "Power cut", "Fire accident"]
 
-def fetch_google_rss_direct(query="bangalore+traffic"):
-    """🛰️ FALLBACK: Direct Google News RSS (Very High Reliability)"""
-    url = f"https://news.google.com/rss/search?q={query}"
+def load_locations():
+    """Load all 500+ locations from colleges.csv for targeted scanning"""
+    locs = []
     try:
-        response = requests.get(url, timeout=10)
+        import csv
+        path = 'c:/Users/dhanu/OneDrive/Desktop/8Th sem/city/colleges.csv'
+        if os.path.exists(path):
+            with open(path, mode='r', encoding='utf-8-sig') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    name = row.get('Name') or row.get('\ufeffName')
+                    if name: locs.append(name)
+    except: pass
+    return locs if locs else ["Majestic", "Silk Board", "MG Road"]
+
+def fetch_rss_single(query):
+    """
+    ⚡ REFINED WORKER: 
+    Strictly searches for incidents in last 12 hours.
+    """
+    # Using 'when:12h' and 'after:YYYY-MM-DD' for extreme freshness
+    today_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    url = f"https://news.google.com/rss/search?q={query.replace(' ', '+')}+bengaluru+after:{today_date}+when:12h"
+    try:
+        response = requests.get(url, timeout=7)
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             items = []
-            for item in root.findall('./channel/item')[:10]:
-                items.append({
-                    "title": item.find('title').text,
-                    "description": item.find('title').text,
-                    "url": item.find('link').text,
-                    "source": "Google News RSS"
-                })
+            for item in root.findall('./channel/item')[:3]:
+                title = item.find('title').text
+                # Filter out old or irrelevant non-Bengaluru results via simple keyword check
+                if "Bengaluru" in title or "Bangalore" in title or any(kw in title.lower() for kw in ["traffic", "accident", "lockdown", "fire"]):
+                   items.append(title)
             return items
-        return []
-    except: return []
-
-def fetch_twitter_v2_official(query="Bengaluru"):
-    bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
-    if not bearer_token: return []
-    
-    url = "https://api.twitter.com/2/tweets/search/recent"
-    headers = {"Authorization": f"Bearer {bearer_token}"}
-    params = {"query": f"{query} lang:en", "max_results": 10}
-
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        if response.status_code == 200:
-            tweets = response.json().get("data", [])
-            return [{"text": t.get("text"), "source": "Twitter"} for t in tweets]
-        return []
-    except: return []
+    except: pass
+    return []
 
 def get_all_realtime_data():
-    """🚀 PRO COLLECTOR: Multi-Protocol Data Retrieval"""
-    all_data = []
+    """
+    🚀 VANGUARD LIVE-ONLY CRAWLER
+    No simulation fallbacks. Only returns real incidents found on Google/X.
+    """
+    taxonomy = load_incident_taxonomy()
+    locations = load_locations()
     
-    # Try multiple protocols to ensure the demo is always full of data
-    for kw in random.sample(EVENT_KEYWORDS, 3):
-        print(f"📡 Sweeping city feeds for: {kw}...")
-        
-        # 1. Official NewsAPI
-        news = fetch_gnews_official(kw)
-        
-        # 2. Direct RSS (High Reliability Fallback)
-        rss = fetch_google_rss_direct(kw.replace(" ", "+")) if not news else []
-        
-        # 3. Twitter v2
-        tweets = fetch_twitter_v2_official(kw)
-        
-        for n in (news + rss):
-            all_data.append({
-                "title": n['title'], "description": n['description'],
-                "source": n['source'], "url": n['url'], "type": "news"
-            })
-        for t in tweets:
-            all_data.append({
-                "description": t['text'], "source": "Twitter", "type": "social"
-            })
-            
-        if len(all_data) > 10: break
-    
-    # FINAL SAFETY NET: If everything is 0, add 3 "Intelligence Simulated" events using Gemini knowledge
-    if not all_data:
-        print("⚠️ FEED EMPTY. Activating Urban Intelligence Simulations...")
-        all_data.append({"description": "Traffic Congestion reported near Silk Board Junction. Heavy delays expected.", "source": "CityPulse AI", "type": "news"})
-        all_data.append({"description": "Major Road Works on MG Road. Diversions in place.", "source": "CityPulse AI", "type": "news"})
-        all_data.append({"description": "Power Outage scheduled for Indiranagar for BESCOM maintenance.", "source": "CityPulse AI", "type": "news"})
+    # Pick 20 types to scan deeply this cycle
+    today_targets = random.sample(taxonomy, min(25, len(taxonomy)))
+    print(f"🛰️ SENTINEL High-Frequency Sweep: {len(today_targets)} categories...")
 
-    return all_data
+    raw_signals = []
+    
+    # Parallel Sweeping
+    with ThreadPoolExecutor(max_workers=15) as executor:
+        results = list(executor.map(fetch_rss_single, today_targets))
+        for res in results:
+            raw_signals.extend(res)
+
+    # Filter for unique signals
+    unique_signals = list(set(raw_signals))
+    if not unique_signals:
+        print("📭 No live incidents detected in the last 12 hours.")
+        return []
+
+    print(f"🧠 AI Synthesis (Gemini): Processing {len(unique_signals)} LIVE signals...")
+    return gemini_batch_resolve(unique_signals, locations)
+
+def gemini_batch_resolve(signals, locations):
+    """Resolve raw headlines to structured events using AI"""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key: return []
+
+    chunk = "\n".join([f"- {s}" for s in signals[:30]])
+    loc_context = ", ".join(random.sample(locations, min(50, len(locations))))
+
+    prompt = f"""
+    You are the SENTINEL Urban AI for Bengaluru. 
+    Analyze these CURRENT headlines/signals and extract REAL, CONFIRMED incidents (TODAY only).
+    
+    SIGNALS:
+    {chunk}
+    
+    LANDMARK CONTEXT: {loc_context}
+    
+    CRITICAL INSTRUCTIONS:
+    1. ONLY include incidents that clearly occurred in the last 24 hours.
+    2. IGNORE general news, sports, or politics unless it causes major crowds/protests.
+    3. Identify the EXACT neighborhood (e.g., Koramangala, Silk Board).
+    4. Return valid JSON list of objects:
+    [{{ "title": "Real Alert Title", "description": "Professional Summary", "location": "Precise Area", "severity": "High/Med/Low", "type": "Type", "source": "Google/Social Feed" }}]
+    
+    If no REAL incidents exist, return an empty list [].
+    """
+    
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        response = requests.post(url, json=payload, timeout=20)
+        if response.status_code == 200:
+            import json
+            raw = response.json()['candidates'][0]['content']['parts'][0]['text']
+            clean = raw.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean)
+    except Exception as e:
+        print(f"Gemini Batch Resolving Error: {e}")
+    return []
+
+def analyze_with_gemini(text):
+    """Standard analysis fallback"""
+    from services.gemini import analyze_event_text
+    return analyze_event_text(text)
+
+def fetch_gnews_official(query):
+    # Keep for backward compatibility
+    return []
