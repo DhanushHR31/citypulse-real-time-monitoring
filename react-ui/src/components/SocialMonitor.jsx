@@ -9,7 +9,12 @@ export default function SocialMonitor({ events, onRefresh, addToast, API_URL }) 
 
   // 🛰️ EXCLUSIVE LIVE FEED: Only show incidents from social sources (Twitter, IG, News, Maps)
   const socialEvents = useMemo(() => {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return events
+      .filter(e => {
+        const evDate = new Date(e.timestamp);
+        return evDate >= twentyFourHoursAgo;
+      })
       .filter(e => ['Twitter', 'Instagram', 'Facebook', 'X/Twitter', 'Sentinel Live Feed', 'Google Maps', 'NewsAPI', 'Google News RSS', 'AI Real-Time Master Prompt', 'ChatGPT / Gemini Verified'].includes(e.source))
       .map(e => ({
         ...e,

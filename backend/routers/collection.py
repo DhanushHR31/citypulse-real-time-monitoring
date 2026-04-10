@@ -130,7 +130,7 @@ def trigger_ai_agent_on_login(db: Session = Depends(get_db)):
                 location_name=inc.get("loc", "Bengaluru"),
                 confidence_score=0.99,
                 map_symbol=inc.get("symbol", "📍")[:4],
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow() - timedelta(hours=random.randint(0, 72)) # Randomize over 3 days
             )
             db.add(new_event)
             inserted += 1

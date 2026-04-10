@@ -66,6 +66,16 @@ AI_INCIDENTS_PAYLOAD = [
     {"title": "Drowning Incident at Lake", "desc": "Search teams deployed to locate a missing teen reported at Madiwala Lake.", "type": "Drowning incident", "sev": "Critical", "loc": "Madiwala Lake", "lat": 12.9118, "lng": 77.6190, "symbol": "🌊🚨"}
 ]
 
-def generate_live_reports_payload(count=50):
-    # Returns the exact realistic data compiled to mirror AI outputs
-    return AI_INCIDENTS_PAYLOAD[:count]
+def generate_live_reports_payload(count=155):
+    # Returns a high-density payload by repeating the master taxonomy if needed
+    result = list(AI_INCIDENTS_PAYLOAD)
+    while len(result) < count:
+        for item in AI_INCIDENTS_PAYLOAD:
+            # Jitter coordinates slightly for each duplicate to create density
+            new_item = item.copy()
+            new_item["lat"] += random.uniform(-0.01, 0.01)
+            new_item["lng"] += random.uniform(-0.01, 0.01)
+            result.append(new_item)
+            if len(result) >= count: break
+            
+    return result[:count]

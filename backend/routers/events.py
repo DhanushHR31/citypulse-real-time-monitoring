@@ -98,14 +98,14 @@ def read_all_events(skip: int = 0, limit: int = 500, db: Session = Depends(get_d
 
 @router.get("/live", response_model=List[schemas.Event])
 def read_live_events(db: Session = Depends(get_db)):
-    """SENTINEL LIVE FEED: Top 50 real-time incidents mapped to dashboard"""
-    events = db.query(models.Event).order_by(models.Event.timestamp.desc()).limit(50).all()
+    """SENTINEL LIVE FEED: Top 300 incidents covering last 3 days"""
+    events = db.query(models.Event).order_by(models.Event.timestamp.desc()).limit(300).all()
     
-    # ⚡ FAIL-SAFE: If DB is empty on first load, trigger the AI Sweep automatically
+    # ⚡ FAIL-SAFE: If DB is empty on first load, trigger the AI Sweep automatically with 155 reports
     if not events:
-        from routers.collection import run_automated_fetch
-        run_automated_fetch(db)
-        events = db.query(models.Event).order_by(models.Event.timestamp.desc()).limit(50).all()
+        from routers.collection import trigger_ai_agent_on_login
+        trigger_ai_agent_on_login(db) # This generates the 150+ payload
+        events = db.query(models.Event).order_by(models.Event.timestamp.desc()).limit(300).all()
         
     return events
 
