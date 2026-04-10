@@ -210,9 +210,10 @@ export default function App() {
           loc: e.location_name || 'Bengaluru',
           time: new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           icon: e.map_symbol || '📍',
-          sev: e.severity.toLowerCase(),
-          type: e.event_type,
-          desc: e.description
+          sev: (e.severity || 'Medium').toLowerCase(),
+          type: e.event_type || 'Urban Alert',
+          desc: e.description,
+          zone: e.latitude > 13.01 ? 'North' : e.latitude < 12.93 ? 'South' : e.longitude > 77.65 ? 'East' : e.longitude < 77.54 ? 'West' : 'Central'
         }));
         setEvents(normalized); // 🚀 100% Live Feed: Removed mock data injection for true real-time accuracy
       }

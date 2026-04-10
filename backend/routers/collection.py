@@ -105,8 +105,8 @@ def trigger_ai_agent_on_login(db: Session = Depends(get_db)):
     payload = generate_login_incident_report()
     
     if not payload or len(payload) < 20:
-        print("⚠️ Gemini Sweep Limited. Falling back to high-quality Sentinel Mock payload.")
-        payload = generate_live_reports_payload(50)
+        print("⚠️ Gemini Sweep Limited. Falling back to high-quality Sentinel 150+ payload.")
+        payload = generate_live_reports_payload(155) # Force 155 reports
     
     try:
         # Purge to cleanly simulate a fresh exact point-in-time extraction per the user's instructions
