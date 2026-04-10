@@ -14,7 +14,7 @@ const ENTITIES = [
   { name: 'BangaloreTagMonitor', status: 'PUBLIC', msg: 'All users have full access', color: '#ef4444' }
 ];
 
-export default function AdminDashboard({ events }) {
+export default function AdminDashboard({ events, API_URL }) {
   const [activeTab, setActiveTab] = useState('Security');
 
   const SIDEBAR_ITEMS = [
@@ -116,7 +116,7 @@ export default function AdminDashboard({ events }) {
         )}
 
         {/* Logs Section */}
-        {activeTab === 'Logs' && <AdminLogs />}
+        {activeTab === 'Logs' && <AdminLogs API_URL={API_URL} />}
 
         {/* API Section */}
         {activeTab === 'API' && <TechnologyStack />}

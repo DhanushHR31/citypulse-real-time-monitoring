@@ -21,7 +21,7 @@ const BENGALURU_ZONES = [
   "East Zone", "West Zone", "South Zone", "North Zone", "Mahadevapura Zone", "Bommanahalli Zone", "RR Nagar Zone", "Dasarahalli Zone"
 ];
 
-export default function FloatAIChat({ incidents }) {
+export default function FloatAIChat({ incidents, API_URL }) {
   const [isOpen, setIsOpen] = useState(false);
   const [msgs, setMsgs] = useState([
     { role: 'ai', text: "🌐 **Google Search Mode Active**.\n\nI am your **AI City Search Engine**. Ask me anything about a Bengaluru location, or search an area below to see live safety intelligence and Google News trends!" }
@@ -44,7 +44,7 @@ export default function FloatAIChat({ incidents }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/chat/', {
+      const res = await fetch(`${API_URL}/chat/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: q, incidents: incidents })

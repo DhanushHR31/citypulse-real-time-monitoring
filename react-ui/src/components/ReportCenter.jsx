@@ -4,7 +4,7 @@ import { LiveMap, Bdg } from './shared';
 import { BANGALORE, ZONE_COLOR, SEV_COLOR, EVENTS, ALERTS, SOCIAL_POSTS, ZONE_STATS, NAV, EVENT_TYPES, RANGES, ZONES } from '../data/mockData';
 import { MapPin, Image, Video, Send, Search, LocateFixed, ShieldAlert } from 'lucide-react';
 
-export default function ReportCenter({ myReports, setMyReports, addToast, onRefresh }) {
+export default function ReportCenter({ myReports, setMyReports, addToast, onRefresh, API_URL }) {
   const [tab, setTab] = useState('incident');
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ 
@@ -50,7 +50,7 @@ export default function ReportCenter({ myReports, setMyReports, addToast, onRefr
     if (file) fd.append('file', file);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/events/report-with-ai', {
+      const res = await fetch(`${API_URL}/events/report-with-ai`, {
         method: 'POST',
         body: fd
       });

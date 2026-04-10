@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { LiveMap, Bdg } from './shared';
 // No longer using SOCIAL_POSTS to ensure 100% Live reporting
 
-export default function SocialMonitor({ events, onRefresh, addToast }) {
+export default function SocialMonitor({ events, onRefresh, addToast, API_URL }) {
   const [filter, setFilter] = useState('All Platforms'); 
   const [search, setSearch] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -51,7 +51,7 @@ export default function SocialMonitor({ events, onRefresh, addToast }) {
             onClick={async () => {
               if (addToast) addToast('⚡ Sentinel Sweep', 'Connecting to Gemini AI for deep Social Crawl...');
               try {
-                 const res = await fetch('http://127.0.0.1:8000/collection/login-trigger', { method: 'POST' });
+                 const res = await fetch(`${API_URL}/collection/login-trigger`, { method: 'POST' });
                  if (res.ok) {
                    const data = await res.json();
                    if (addToast) addToast('✅ Master Sweep Complete', data.message || 'Collected ~40 FRESH Live Incidents.');

@@ -25,7 +25,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const BASE_API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = BASE_API.replace(/\/$/, ""); // Clean trailing slash
 
 const zoneIcon = ev => L.divIcon({
   className: '',
@@ -162,6 +163,7 @@ export default function App() {
   const [evType, setEvType] = useState('All');
   const [myReports, setMyReports] = useState([]);
   const [toasts, setToasts] = useState([]);
+  const [syncing, setSyncing] = useState(false);
 
   const addToast = useCallback((title, body) => { 
     const id = Date.now(); 
@@ -238,10 +240,24 @@ export default function App() {
 
   useEffect(() => {
     fetchEvents();
-    // 🛡️ EXTREME LIVE SYNC: Poll for fresh incidents every 30 seconds (Updated as requested)
     const interval = setInterval(fetchEvents, 30000);
     return () => clearInterval(interval);
   }, [fetchEvents]);
+
+  const forceSweep = async () => {
+    setSyncing(true);
+    addToast('🛰️ AI Sweep Initiated', 'Sentinel is scanning Bengaluru for 40 fresh incidents...');
+    try {
+      await fetch(`${API_URL}/collection/login-trigger`, { method: 'POST' });
+      await new Promise(r => setTimeout(r, 5000)); // Wait for AI processing
+      await fetchEvents();
+      addToast('✅ Sync Complete', 'Map and Dashboard updated with live AI data.');
+    } catch (err) {
+      addToast('❌ Sync Failed', 'Check backend connectivity.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const stats = { 
     total: events.length, 
@@ -278,7 +294,7 @@ export default function App() {
 
             // 🚀 THE FUTURE: Trigger 50 Real-Time Incidents sync immediately upon user registration/login.
             try {
-              await fetch('http://127.0.0.1:8000/collection/login-trigger', { method: 'POST' });
+              await fetch(`${API_URL}/collection/login-trigger`, { method: 'POST' });
               await fetchEvents(); 
               addToast('🛰️ AI Trigger Successful', 'Dashboard successfully populated with 50 live incidents.');
             } catch (triggerErr) {
@@ -316,7 +332,7 @@ export default function App() {
 
             // 🚀 THE FUTURE: Trigger 50 Real-Time Incidents sync immediately upon user login.
             try {
-              await fetch('http://127.0.0.1:8000/collection/login-trigger', { method: 'POST' });
+              await fetch(`${API_URL}/collection/login-trigger`, { method: 'POST' });
               await fetchEvents(); // Rerender social monitoring, map, and safety dashboard
               addToast('🛰️ AI Trigger Successful', 'Dashboard successfully populated with 50 live incidents.');
             } catch (triggerErr) {
@@ -503,23 +519,29 @@ export default function App() {
         <div className="cp-hero">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div><div style={{ fontSize: '1.25rem', fontWeight: 800 }}>🛡️ CityPulse</div><div style={{ fontSize: '.78rem', color: 'rgba(255,255,255,.65)' }}>Bengaluru Urban Intelligence Platform</div></div>
-            <span style={{ background: 'rgba(99,102,241,.3)', border: '1px solid rgba(99,102,241,.5)', padding: '4px 12px', borderRadius: 999, fontSize: '.78rem', color: '#c7d2fe' }}>● {stats.total} total incidents tracked</span>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+               <span style={{ background: API_URL.includes('render') ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)', border: '1px solid rgba(255,255,255,.1)', padding: '4px 10px', borderRadius: 6, fontSize: '.7rem', color: API_URL.includes('render') ? '#4ade80' : '#fca5a5' }}>
+                 {API_URL.includes('render') ? '☁️ Cloud Mode' : '🏠 Local Mode'}
+               </span>
+               <span style={{ background: 'rgba(99,102,241,.3)', border: '1px solid rgba(99,102,241,.5)', padding: '4px 12px', borderRadius: 999, fontSize: '.78rem', color: '#c7d2fe' }}>● {stats.total} total incidents tracked</span>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 24, marginBottom: 12 }}>
             {[['Total Data', stats.total, '#fff'], ['Critical', stats.critical, '#f87171'], ['High Safety', stats.high, '#fb923c'], ['Social Feed', SOCIAL_POSTS.length, '#a78bfa']].map(([l, v, c]) => <div key={l} style={{ textAlign: 'center' }}><div style={{ fontSize: '1.6rem', fontWeight: 800, color: c, lineHeight: 1 }}>{v}</div><div style={{ fontSize: '.72rem', color: 'rgba(255,255,255,.6)', marginTop: 3 }}>{l}</div></div>)}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {[['➕', 'Report', 'reports'], ['🧭', 'Nav', 'navigation'], ['💬', 'Social', 'social'], ['🤖', 'AI', 'ai']].map(([ic, l, to]) => <button key={l} className="cp-hero-btn" onClick={() => setTab(to)}>{ic} {l}</button>)}
+            <button className="cp-hero-btn" onClick={forceSweep} disabled={syncing} style={{ background: syncing ? 'rgba(0,0,0,0.5)' : 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', color: syncing ? '#666' : '#10b981' }}>{syncing ? '⌛ Syncing...' : '🛰️ Force AI Sync'}</button>
             {tab === 'dashboard' && <button className="cp-hero-btn" style={{ background: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgba(239, 68, 68, 0.4)' }} onClick={() => document.getElementById('live-reports-anchor')?.scrollIntoView({ behavior: 'smooth' })}>🗂️ Live Reports ↓</button>}
           </div>
         </div>
         <div className="cp-body">
-          {tab === 'dashboard' && <Dashboard events={events} alerts={liveAlerts} social={SOCIAL_POSTS} range={range} setRange={setRange} zone={zone} setZone={setZone} evType={evType} setEvType={setEvType} onRefresh={fetchEvents} loading={loading} addToast={addToast} />}
+          {tab === 'dashboard' && <Dashboard events={events} alerts={liveAlerts} social={SOCIAL_POSTS} range={range} setRange={setRange} zone={zone} setZone={setZone} evType={evType} setEvType={setEvType} onRefresh={fetchEvents} loading={loading} addToast={addToast} API_URL={API_URL} />}
           {tab === 'alerts' && <SafetyAlerts alerts={liveAlerts} />}
-          {tab === 'navigation' && <Navigation events={events} userEmail={authEmail} />}
-          {tab === 'social' && <SocialMonitor events={events} onRefresh={fetchEvents} addToast={addToast} />}
-          {tab === 'reports' && <ReportCenter myReports={myReports} setMyReports={setMyReports} addToast={addToast} onRefresh={fetchEvents} />}
-          {tab === 'ai' && <AiAgent />}
+          {tab === 'navigation' && <Navigation events={events} userEmail={authEmail} API_URL={API_URL} />}
+          {tab === 'social' && <SocialMonitor events={events} onRefresh={fetchEvents} addToast={addToast} API_URL={API_URL} />}
+          {tab === 'reports' && <ReportCenter myReports={myReports} setMyReports={setMyReports} addToast={addToast} onRefresh={fetchEvents} API_URL={API_URL} />}
+          {tab === 'ai' && <AiAgent API_URL={API_URL} />}
           {tab === 'overview' && <CityOverview events={events} />}
           {tab === 'profile' && <Profile />}
         </div>
@@ -530,7 +552,7 @@ export default function App() {
       </div>
 
       {/* Floating AI Agent */}
-      <FloatAIChat incidents={events} />
+      <FloatAIChat incidents={events} API_URL={API_URL} />
     </div>
   );
 }

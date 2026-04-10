@@ -55,7 +55,7 @@ function ScoreRing({ score }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────
-export default function Navigation({ events = [], userEmail: loginEmail = '' }) {
+export default function Navigation({ events = [], userEmail: loginEmail = '', API_URL }) {
   const [orig, setOrig] = useState('');  const [dest, setDest] = useState('');
   const [os,   setOs]   = useState([]);  const [ds,   setDs]   = useState([]);
   const [origPos, setOrigPos] = useState(null);
@@ -322,7 +322,7 @@ export default function Navigation({ events = [], userEmail: loginEmail = '' }) 
         hazards:      rt.hazards.map(h => ({ title: h.title || h.type || 'Incident', sev: h.sev || 'medium' })),
       };
       try {
-        const r = await fetch('http://127.0.0.1:8000/navigation/start-ride', {
+        const r = await fetch(`${API_URL}/navigation/start-ride`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify(payload)
         });
@@ -363,7 +363,7 @@ export default function Navigation({ events = [], userEmail: loginEmail = '' }) 
     // hazard email
     if (userEmail && !notifiedHazards.has(key)) {
       setNotifiedHazards(p => new Set([...p, key]));
-      fetch('http://127.0.0.1:8000/navigation/hazard-alert', {
+      fetch(`${API_URL}/navigation/hazard-alert`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ email:userEmail, hazard_title:h.title, hazard_sev:h.sev, destination:dest })
       }).catch(()=>{});

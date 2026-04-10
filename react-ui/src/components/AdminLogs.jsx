@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-export default function AdminLogs() {
+export default function AdminLogs({ API_URL }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/users/logs')
+    fetch(`${API_URL}/users/logs`)
       .then(res => res.json())
       .then(data => { setLogs(data); setLoading(false); })
       .catch(() => setLoading(false));
