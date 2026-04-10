@@ -33,7 +33,7 @@ export default function SocialMonitor({ events, onRefresh, addToast, API_URL }) 
     lat: e.lat,
     lng: e.lng,
     icon: e.icon || '📍'
-  }));
+  })).slice(0, 50); // ⚡ STRICT PRESENTATION MODE: Limit to exactly 50 fresh reports
 
   const stats = {
     total: filtered.length,
@@ -78,9 +78,8 @@ export default function SocialMonitor({ events, onRefresh, addToast, API_URL }) 
         </div>
       </div>
 
-      {/* 📍 LIVE SOCIAL MAP */}
       <div className="cp-card" style={{ padding: 0, overflow: 'hidden', height: '350px', marginBottom: 16 }}>
-        <LiveMap events={socialEventsAll.map(e => ({ ...e, id: `map-${e.id}`, lat: e.lat, lng: e.lng, icon: e.icon || '📍', title: e.title, desc: e.desc }))} height="350px" zoom={11} />
+        <LiveMap events={filtered.map(e => ({ ...e, id: `map-${e.id}`, lat: e.lat, lng: e.lng, icon: e.icon || '📍', title: e.title, desc: e.text }))} height="350px" zoom={11} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
