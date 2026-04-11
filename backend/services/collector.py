@@ -10,8 +10,22 @@ from concurrent.futures import ThreadPoolExecutor
 def load_incident_taxonomy():
     types = []
     try:
-        path = 'c:/Users/dhanu/OneDrive/Desktop/8Th sem/city/incidents_types.csv'
-        if os.path.exists(path):
+        # Resolve path relative to project root (parent of /backend)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Search in backend or project root
+        path_options = [
+            os.path.join(base_dir, "incidents_types.csv"),
+            os.path.join(os.path.dirname(base_dir), "incidents_types.csv"),
+            "incidents_types.csv"
+        ]
+        
+        path = ""
+        for p in path_options:
+            if os.path.exists(p):
+                path = p
+                break
+        
+        if path:
             with open(path, mode='r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
@@ -24,8 +38,20 @@ def load_locations():
     locs = []
     try:
         import csv
-        path = 'c:/Users/dhanu/OneDrive/Desktop/8Th sem/city/colleges.csv'
-        if os.path.exists(path):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path_options = [
+            os.path.join(base_dir, "colleges.csv"),
+            os.path.join(os.path.dirname(base_dir), "colleges.csv"),
+            "colleges.csv"
+        ]
+        
+        path = ""
+        for p in path_options:
+            if os.path.exists(p):
+                path = p
+                break
+                
+        if path:
             with open(path, mode='r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 for row in reader:

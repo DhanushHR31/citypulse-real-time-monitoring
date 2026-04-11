@@ -24,7 +24,7 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
-async def handle_login_notification(email: str, name: str):
+def handle_login_notification(email: str, name: str):
     """AI SENTINEL: Generates 30-incident report and sends email in background."""
     print(f"🚀 AI Agent starting deep search for 30 live incidents for {email}...")
     try:

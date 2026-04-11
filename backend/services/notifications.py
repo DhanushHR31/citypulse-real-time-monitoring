@@ -8,7 +8,7 @@ def send_notification(token: str, title: str, body: str, data: dict = None):
     """
     print(f"\n📢 [CITIZEN ALERT] To: {token}")
     print(f"   ► {title}: {body}")
-    return "local-id-123"
+    return {"status": "success", "id": "local-id-123", "destination": token}
 
 def send_topic_notification(topic: str, title: str, body: str, data: dict = None):
     """
@@ -16,4 +16,4 @@ def send_topic_notification(topic: str, title: str, body: str, data: dict = None
     """
     print(f"\n🏙️ [CITY BROADCAST] Topic: {topic}")
     print(f"   ► {title}: {body}")
-    return "local-topic-123"
+    return {"status": "success", "id": "local-topic-123", "topic": topic}

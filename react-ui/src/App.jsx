@@ -165,6 +165,26 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [syncing, setSyncing] = useState(false);
 
+  // --- NATIVE NOTIFICATION SYSTEM ---
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") return;
+    try {
+      await Notification.requestPermission();
+    } catch (err) {
+      console.error("Notification permission error", err);
+    }
+  };
+
+  const sendNativeNotification = (title, body, icon = "🛡️") => {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    new Notification(title, {
+      body,
+      icon: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png", // Fallback icon
+      badge: "🛡️"
+    });
+  };
+
   const addToast = useCallback((title, body) => { 
     const id = Date.now(); 
     setToasts(t => [...t, { id, title, body }]); 
@@ -177,11 +197,13 @@ export default function App() {
     if (events.length > lastEventCount.current) {
       const newEv = events[events.length - 1];
       if (newEv.sev === 'critical') {
+        const msg = `🚨 CRITICAL ALERT: ${newEv.title} at ${newEv.loc}. Please check the map immediately.`;
         setVirtualNotify({
-          msg: `🚨 CRITICAL ALERT: ${newEv.title} at ${newEv.loc}. Please check the map immediately.`,
+          msg,
           phone: "CityPulse Sentinel",
           type: "critical"
         });
+        sendNativeNotification("🚨 CRITICAL ALERT", `${newEv.title} detected at ${newEv.loc}.`, "🚨");
       }
     }
     lastEventCount.current = events.length;
@@ -305,6 +327,12 @@ export default function App() {
             addToast('✅ Account Created', `Welcome to CityPulse, ${authName}! check you email we sent current day 10 category master prompt report  .`);
             setAuthPassword('');
             
+            // Request Permission for future push
+            requestNotificationPermission();
+
+            // Trigger Native Notification
+            sendNativeNotification("🛡️ Welcome to CityPulse", `Account ${authEmail} registered successfully. Pulse Active.`);
+            
             // Trigger Virtual SMS for Login
             setVirtualNotify({
               msg: `🔐 Security Alert: Successful registration for account ${authEmail}. Location: Bengaluru, IN.`,
@@ -342,6 +370,12 @@ export default function App() {
             setAuthPhone(data.user.phone || '');
             addToast('✅ Logged In', `Welcome back! check you email we sent current day 10 category master prompt report .`);
             setAuthPassword('');
+            
+            // Request Permission
+            requestNotificationPermission();
+
+            // Trigger Native Notification
+            sendNativeNotification("🛂 Login Successful", `Welcome back, ${data.user.name || 'Agent'}. Monitoring live feeds...`);
             
             // Trigger Virtual SMS for Login
             setVirtualNotify({
